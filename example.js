@@ -25,7 +25,7 @@ console.log('connecting mqtt client')
 // window.client = mqtt.connect(host, options)
 const client = mqtt.connect(host, options)
 client.on('error', (err) => {
-  console.log('Connection error: ', err)
+  // console.log('Connection error: ', err)
   client.end()
 })
 // 重新连接
@@ -33,7 +33,7 @@ client.on('reconnect', () => {
   console.log('Reconnecting...')
 })
 client.on('connect', () => {
-  MS()
+  // MS()
   // MP('181708623737555397')
   // MP('181708623737555399')
   // console.log('Client connected:' + clientId)
@@ -100,11 +100,11 @@ function MS() {
     retain: false
   }, (error, res) => {
     if (error) {
-      console.log('Subscribe to topics error', error)
+      // console.log('Subscribe to topics error', error)
       return
     }
-    console.log('Subscribe to topics res', res.toString(), res.payload.toString())
-    console.log(JSON.parse(res.payload).content.content)
+    // console.log('Subscribe to topics res', res.toString(), res.payload.toString())
+    // console.log(JSON.parse(res.payload).content.content)
   })
   console.log(MPS)
 }

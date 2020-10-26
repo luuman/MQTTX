@@ -85,11 +85,11 @@ var errors = {
   162: 'Wildcard Subscriptions not supported'
 }
 
-function defaultId () {
+function defaultId() {
   return 'mqttjs_' + Math.random().toString(16).substr(2, 8)
 }
 
-function sendPacket (client, packet, cb) {
+function sendPacket(client, packet, cb) {
   debug('sendPacket :: packet: %O', packet)
   debug('sendPacket :: emitting `packetsend`')
   client.emit('packetsend', packet)
@@ -106,7 +106,7 @@ function sendPacket (client, packet, cb) {
   }
 }
 
-function flush (queue) {
+function flush(queue) {
   if (queue) {
     debug('flush: queue exists? %b', !!(queue))
     Object.keys(queue).forEach(function (messageId) {
@@ -118,7 +118,7 @@ function flush (queue) {
   }
 }
 
-function flushVolatile (queue) {
+function flushVolatile(queue) {
   if (queue) {
     debug('flushVolatile :: deleting volatile messages from the queue and setting their callbacks as error function')
     Object.keys(queue).forEach(function (messageId) {
@@ -130,9 +130,9 @@ function flushVolatile (queue) {
   }
 }
 
-function storeAndSend (client, packet, cb, cbStorePut) {
+function storeAndSend(client, packet, cb, cbStorePut) {
   debug('storeAndSend :: store packet with cmd %s to outgoingStore', packet.cmd)
-  client.outgoingStore.put(packet, function storedPacket (err) {
+  client.outgoingStore.put(packet, function storedPacket(err) {
     if (err) {
       return cb && cb(err)
     }
@@ -141,7 +141,7 @@ function storeAndSend (client, packet, cb, cbStorePut) {
   })
 }
 
-function nop (error) {
+function nop(error) {
   debug('nop ::', error)
 }
 
@@ -152,7 +152,7 @@ function nop (error) {
  * @param {Object} [options] - connection options
  * (see Connection#connect)
  */
-function MqttClient (streamBuilder, options) {
+function MqttClient(streamBuilder, options) {
   var k
   var that = this
 
@@ -231,7 +231,7 @@ function MqttClient (streamBuilder, options) {
   this.on('connect', function () {
     var queue = this.queue
 
-    function deliver () {
+    function deliver() {
       var entry = queue.shift()
       debug('deliver :: entry %o', entry)
       var packet = null
@@ -304,7 +304,7 @@ MqttClient.prototype._setupStream = function () {
     packets.push(packet)
   })
 
-  function nextTickWork () {
+  function nextTickWork() {
     if (packets.length) {
       nextTick(work)
     } else {
@@ -314,13 +314,13 @@ MqttClient.prototype._setupStream = function () {
     }
   }
 
-  function work () {
+  function work(buf) {
     debug('work :: getting next packet in queue')
     var packet = packets.shift()
 
     if (packet) {
       debug('work :: packet pulled from queue')
-      that._handlePacket(packet, nextTickWork)
+      that._handlePacket(packet, nextTickWork, buf)
     } else {
       debug('work :: no packets in queue')
       var done = completeParse
@@ -334,10 +334,10 @@ MqttClient.prototype._setupStream = function () {
     completeParse = done
     debug('writable stream :: parsing buffer')
     parser.parse(buf)
-    work()
+    work(buf)
   }
 
-  function streamErrorHandler (error) {
+  function streamErrorHandler(error) {
     debug('streamErrorHandler :: error', error.message)
     if (socketErrors.includes(error.code)) {
       // handle error
@@ -381,7 +381,7 @@ MqttClient.prototype._setupStream = function () {
       return this
     }
     if (this.options.properties.authenticationMethod && this.options.authPacket && typeof this.options.authPacket === 'object') {
-      var authPacket = xtend({cmd: 'auth', reasonCode: 0}, this.options.authPacket)
+      var authPacket = xtend({ cmd: 'auth', reasonCode: 0 }, this.options.authPacket)
       sendPacket(this, authPacket)
     }
   }
@@ -396,12 +396,12 @@ MqttClient.prototype._setupStream = function () {
   }, this.options.connectTimeout)
 }
 
-MqttClient.prototype._handlePacket = function (packet, done) {
+MqttClient.prototype._handlePacket = function (packet, done, buf) {
   var options = this.options
 
   if (options.protocolVersion === 5 && options.properties && options.properties.maximumPacketSize && options.properties.maximumPacketSize < packet.length) {
     this.emit('error', new Error('exceeding packets size ' + packet.cmd))
-    this.end({reasonCode: 149, properties: { reasonString: 'Maximum packet size was exceeded' }})
+    this.end({ reasonCode: 149, properties: { reasonString: 'Maximum packet size was exceeded' } })
     return this
   }
   debug('_handlePacket :: emitting packetreceive')
@@ -416,7 +416,7 @@ MqttClient.prototype._handlePacket = function (packet, done) {
     case 'pubcomp':
     case 'suback':
     case 'unsuback':
-      this._handleAck(packet)
+      this._handleAck(packet, buf)
       done()
       break
     case 'pubrel':
@@ -485,7 +485,7 @@ MqttClient.prototype.publish = function (topic, message, opts, callback) {
   }
 
   // default opts
-  var defaultOpts = {qos: 0, retain: false, dup: false}
+  var defaultOpts = { qos: 0, retain: false, dup: false }
   opts = xtend(defaultOpts, opts)
 
   if (this._checkDisconnecting(callback)) {
@@ -617,7 +617,7 @@ MqttClient.prototype.subscribe = function () {
       debug('subscribe: array topic %s', topic)
       if (!that._resubscribeTopics.hasOwnProperty(topic) ||
         that._resubscribeTopics[topic].qos < opts.qos ||
-          resubscribe) {
+        resubscribe) {
         var currentOpts = {
           topic: topic,
           qos: opts.qos
@@ -639,7 +639,7 @@ MqttClient.prototype.subscribe = function () {
         debug('subscribe: object topic %s', k)
         if (!that._resubscribeTopics.hasOwnProperty(k) ||
           that._resubscribeTopics[k].qos < obj[k].qos ||
-            resubscribe) {
+          resubscribe) {
           var currentOpts = {
             topic: k,
             qos: obj[k].qos
@@ -815,7 +815,7 @@ MqttClient.prototype.end = function (force, opts, cb) {
   debug('end :: cb? %s', !!cb)
   cb = cb || nop
 
-  function closeStores () {
+  function closeStores() {
     debug('end :: closeStores: closing incoming and outgoing stores')
     that.disconnected = true
     that.incomingStore.close(function (e1) {
@@ -834,7 +834,7 @@ MqttClient.prototype.end = function (force, opts, cb) {
     }
   }
 
-  function finish () {
+  function finish() {
     // defer closesStores of an I/O cycle,
     // just to make sure things are
     // ok for websockets
@@ -880,7 +880,7 @@ MqttClient.prototype.end = function (force, opts, cb) {
 MqttClient.prototype.removeOutgoingMessage = function (messageId) {
   var cb = this.outgoing[messageId] ? this.outgoing[messageId].cb : null
   delete this.outgoing[messageId]
-  this.outgoingStore.del({messageId: messageId}, function () {
+  this.outgoingStore.del({ messageId: messageId }, function () {
     cb(new Error('Message removed'))
   })
   return this
@@ -1060,7 +1060,7 @@ MqttClient.prototype._sendPacket = function (packet, cb, cbStorePut) {
      * anyway it will result in -1 evaluation
      */
     case 0:
-      /* falls through */
+    /* falls through */
     default:
       sendPacket(this, packet, cb)
       break
@@ -1240,10 +1240,10 @@ MqttClient.prototype._handlePublish = function (packet, done) {
         if (error) { return that.emit('error', error) }
         if (validReasonCodes.indexOf(code) === -1) { return that.emit('error', new Error('Wrong reason code for pubrec')) }
         if (code) {
-          that._sendPacket({cmd: 'pubrec', messageId: messageId, reasonCode: code}, done)
+          that._sendPacket({ cmd: 'pubrec', messageId: messageId, reasonCode: code }, done)
         } else {
           that.incomingStore.put(packet, function () {
-            that._sendPacket({cmd: 'pubrec', messageId: messageId}, done)
+            that._sendPacket({ cmd: 'pubrec', messageId: messageId }, done)
           })
         }
       })
@@ -1263,7 +1263,7 @@ MqttClient.prototype._handlePublish = function (packet, done) {
           if (err) {
             return done && done(err)
           }
-          that._sendPacket({cmd: 'puback', messageId: messageId, reasonCode: code}, done)
+          that._sendPacket({ cmd: 'puback', messageId: messageId, reasonCode: code }, done)
         })
       })
       break
@@ -1300,7 +1300,7 @@ MqttClient.prototype.handleMessage = function (packet, callback) {
  * @api private
  */
 
-MqttClient.prototype._handleAck = function (packet) {
+MqttClient.prototype._handleAck = function (packet, buf) {
   /* eslint no-fallthrough: "off" */
   var messageId = packet.messageId
   var type = packet.cmd
@@ -1319,7 +1319,7 @@ MqttClient.prototype._handleAck = function (packet) {
   debug('_handleAck :: packet type', type)
   switch (type) {
     case 'pubcomp':
-      // same thing as puback for QoS 2
+    // same thing as puback for QoS 2
     case 'puback':
       var pubackRC = packet.reasonCode
       // Callback - we're done
@@ -1329,7 +1329,14 @@ MqttClient.prototype._handleAck = function (packet) {
         cb(err, packet)
       }
       delete this.outgoing[messageId]
-      this.outgoingStore.del(packet, cb)
+
+      this.outgoingStore.del(packet, () => {
+        console.log(buf)
+        if (buf) {
+          const bufs = buf.toString()
+          cb(bufs.indexOf('{') !== -1 ? JSON.parse('{' + bufs.substring(bufs.indexOf('{') + 1, bufs.length)) : buf)
+        }
+      })
       break
     case 'pubrec':
       response = {
@@ -1371,7 +1378,7 @@ MqttClient.prototype._handleAck = function (packet) {
   }
 
   if (this.disconnecting &&
-      Object.keys(this.outgoing).length === 0) {
+    Object.keys(this.outgoing).length === 0) {
     this.emit('outgoingEmpty')
   }
 }
@@ -1388,7 +1395,7 @@ MqttClient.prototype._handlePubrel = function (packet, callback) {
   var messageId = packet.messageId
   var that = this
 
-  var comp = {cmd: 'pubcomp', messageId: messageId}
+  var comp = { cmd: 'pubcomp', messageId: messageId }
 
   that.incomingStore.get(packet, function (err, pub) {
     if (!err) {
@@ -1446,8 +1453,8 @@ MqttClient.prototype._resubscribe = function (connack) {
   debug('_resubscribe')
   var _resubscribeTopicsKeys = Object.keys(this._resubscribeTopics)
   if (!this._firstConnection &&
-      (this.options.clean || (this.options.protocolVersion === 5 && !connack.sessionPresent)) &&
-      _resubscribeTopicsKeys.length > 0) {
+    (this.options.clean || (this.options.protocolVersion === 5 && !connack.sessionPresent)) &&
+    _resubscribeTopicsKeys.length > 0) {
     if (this.options.resubscribe) {
       if (this.options.protocolVersion === 5) {
         debug('_resubscribe: protocolVersion 5')
@@ -1455,7 +1462,7 @@ MqttClient.prototype._resubscribe = function (connack) {
           var resubscribeTopic = {}
           resubscribeTopic[_resubscribeTopicsKeys[topicI]] = this._resubscribeTopics[_resubscribeTopicsKeys[topicI]]
           resubscribeTopic.resubscribe = true
-          this.subscribe(resubscribeTopic, {properties: resubscribeTopic[_resubscribeTopicsKeys[topicI]].properties})
+          this.subscribe(resubscribeTopic, { properties: resubscribeTopic[_resubscribeTopicsKeys[topicI]].properties })
         }
       } else {
         this._resubscribeTopics.resubscribe = true
@@ -1487,10 +1494,10 @@ MqttClient.prototype._onConnect = function (packet) {
 
   this.connected = true
 
-  function startStreamProcess () {
+  function startStreamProcess() {
     var outStore = that.outgoingStore.createStream()
 
-    function clearStoreProcessing () {
+    function clearStoreProcessing() {
       that._storeProcessing = false
       that._packetIdsDuringStoreProcessing = {}
     }
@@ -1502,13 +1509,13 @@ MqttClient.prototype._onConnect = function (packet) {
       that.emit('error', err)
     })
 
-    function remove () {
+    function remove() {
       outStore.destroy()
       outStore = null
       clearStoreProcessing()
     }
 
-    function storeDeliver () {
+    function storeDeliver() {
       // edge case, we wrapped this twice
       if (!outStore) {
         return
