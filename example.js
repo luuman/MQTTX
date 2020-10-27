@@ -1,7 +1,8 @@
 var mqtt = require('./')
+const clientId = 'mqttjs_' + Math.random().toString(16).substr(2, 8)
 
-const clientId = 'app20191009111001380400'
-const host = 'mqtt://bj-pt-prd-vpn.reworldgame.com:1883'
+const host = 'ws://broker.emqx.io:8083/mqtt'
+
 const options = {
   keepalive: 30,
   clientId: clientId,
@@ -10,8 +11,6 @@ const options = {
   clean: true,
   reconnectPeriod: 1000,
   connectTimeout: 30 * 1000,
-  username: '20191009111001380400', //  登录的用户名
-  password: 'aOFohUK4e3zIT8Hr3Cyu5/D+tMWOk51WgKHLV6Vc3g1S0pm2VINjIfkOZUUXxPo/4f5tMdYFa5499sKO8wMV0he6r3wFQvRsrdPyjJ+Gqti8x0E5TuTOXwsus9flnZQL0KL6oWUGPm4onvkaY2A8fwDkb0C7osxD/1Lp6p6Fsn4w0PGFwBaFFL7HEfTfEmEH',
   will: {
     topic: 'WillMsg',
     payload: 'Connection Closed abnormally..!',
@@ -20,6 +19,28 @@ const options = {
   },
   rejectUnauthorized: false
 }
+
+// const clientId = 'app20191009111001380400'
+// const host = 'mqtt://bj-pt-prd-vpn.reworldgame.com:1883'
+// // const host = 'ws://broker.emqx.io:8083/mqtt'
+// const options = {
+//   keepalive: 30,
+//   clientId: clientId,
+//   protocolId: 'MQTT',
+//   protocolVersion: 4,
+//   clean: true,
+//   reconnectPeriod: 1000,
+//   connectTimeout: 30 * 1000,
+//   username: '20191009111001380400', //  登录的用户名
+//   password: 'aOFohUK4e3zIT8Hr3Cyu5/D+tMWOk51WgKHLV6Vc3g1S0pm2VINjIfkOZUUXxPo/4f5tMdYFa5499sKO8wMV0he6r3wFQvRsrdPyjJ+Gqti8x0E5TuTOXwsus9flnZQL0KL6oWUGPm4onvkaY2A8fwDkb0C7osxD/1Lp6p6Fsn4w0PGFwBaFFL7HEfTfEmEH',
+//   will: {
+//     topic: 'WillMsg',
+//     payload: 'Connection Closed abnormally..!',
+//     qos: 0,
+//     retain: false
+//   },
+//   rejectUnauthorized: false
+// }
 // 可查看到 mqtt 模块的信息
 console.log('connecting mqtt client')
 // window.client = mqtt.connect(host, options)
@@ -33,7 +54,7 @@ client.on('reconnect', () => {
   console.log('Reconnecting...')
 })
 client.on('connect', () => {
-  // MS()
+  MS()
   // MP('181708623737555397')
   // MP('181708623737555399')
   // console.log('Client connected:' + clientId)
@@ -103,7 +124,7 @@ function MS() {
       // console.log('Subscribe to topics error', error)
       return
     }
-    // console.log('Subscribe to topics res', res.toString(), res.payload.toString())
+    console.log('Subscribe to topics res', res.toString(), res.payload.toString())
     // console.log(JSON.parse(res.payload).content.content)
   })
   console.log(MPS)
@@ -127,14 +148,15 @@ function MP(num) {
       }
       console.log('Subscribe cbStorePuts res', res)
     }
-  }, (error, res) => {
+  }, (error, res, data) => {
     if (error) {
       console.log('Subscribe to topics error', error)
+      // console.log(error.toString())
       return
     }
-    console.log('Subscribe to topics res', this, res)
-    console.log(client)
-    console.log(client._events.messagesubscribe)
+    console.log('Subscribe to topics res', data, res)
+    console.log(data)
+    // console.log(client._events.messagesubscribe)
     // client._events.message((topic, message, packet) => {
     //   console.log(topic, message, packet)
     // })
