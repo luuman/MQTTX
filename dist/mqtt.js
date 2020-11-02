@@ -1329,7 +1329,22 @@ MqttClient.prototype._handleAck = function (packet, buf) {
         cb(err, packet)
       }
       delete this.outgoing[messageId]
+      // this.outgoingStore.del(packet, () => {
+      //   cb(buf)
+      // })
+      if (buf) {
+        const bufs = buf.toString()
+        buf = bufs.indexOf('{') !== -1 ? JSON.parse('{' + bufs.substring(bufs.indexOf('{') + 1, bufs.length)) : buf
+      }
+      console.log('=========', buf.toString())
       this.outgoingStore.del(packet, cb, buf)
+      // this.outgoingStore.del(packet, () => {
+      //   console.log(buf)
+      //   if (buf) {
+      //     const bufs = buf.toString()
+      //     cb(bufs.indexOf('{') !== -1 ? JSON.parse('{' + bufs.substring(bufs.indexOf('{') + 1, bufs.length)) : buf)
+      //   }
+      // })
       break
     case 'pubrec':
       response = {
@@ -2284,10 +2299,9 @@ Store.prototype.createStream = function () {
  */
 Store.prototype.del = function (packet, cb, buf) {
   packet = this._inflights.get(packet.messageId)
-  const bufs = buf.toString().indexOf('{') !== -1 ? JSON.parse('{' + buf.toString().substring(buf.toString().indexOf('{') + 1, buf.toString().length)) : buf
   if (packet) {
     this._inflights.delete(packet.messageId)
-    cb(null, packet, bufs)
+    cb(null, packet, buf)
   } else if (cb) {
     cb(new Error('missing packet'))
   }
